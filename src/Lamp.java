@@ -1,6 +1,5 @@
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.*;
-import org.jogamp.java3d.utils.image.TextureLoader;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
@@ -8,12 +7,17 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class Lamp {
-    private static boolean lightOn = true;
-    private static PointLight pointLight;
+    static Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
+    private static PointLight pointLight = new PointLight(lightColor, new Point3f(0.0f, 0.6f, 0.0f), new Point3f(1.0f, 0.0f, 0.0f));
+    
+    static {
+        pointLight.setCapability(PointLight.ALLOW_STATE_READ);
+        pointLight.setCapability(PointLight.ALLOW_STATE_WRITE);
+    }
 
     public static void main(String[] args) {
         // Create the main application window (Frame)
-        Frame frame = new Frame("Interactive Lamp");
+        Frame frame = new Frame("Lamp");
         frame.setLayout(new BorderLayout());
 
         // Create Canvas3D and set its size
@@ -57,30 +61,17 @@ public class Lamp {
         // Create the lamp TransformGroup
         TransformGroup lampTG = new TransformGroup();
 
-        // Load textures
-        Texture baseTexture = loadTexture("img/lamp_base.jpg");
-        Texture neckTexture = loadTexture("img/lamp_neck.jpg");
-        Texture shadeTexture = loadTexture("img/lamp_shade.jpg");
+        // Create the lamp base (cylinder) with orange color
+        Appearance baseAppearance = createMaterialAppearance(new Color3f(1.0f, 0.6f, 0.0f)); // Orange base
+        Cylinder lampBase = new Cylinder(0.2f, 0.05f, Primitive.GENERATE_NORMALS, baseAppearance);
 
-        // Create the lamp base (cylinder)
-        Appearance baseAppearance = createTextureAppearance(baseTexture);
-        Cylinder lampBase = new Cylinder(0.2f, 0.05f, Primitive.GENERATE_TEXTURE_COORDS, baseAppearance);
+        // Create the lamp neck (thin cylinder) with light brown color
+        Appearance neckAppearance = createMaterialAppearance(new Color3f(0.8f, 0.5f, 0.2f)); // Light brown neck
+        Cylinder lampNeck = new Cylinder(0.05f, 0.6f, Primitive.GENERATE_NORMALS, neckAppearance);
 
-        // Create the lamp neck (thin cylinder)
-        Appearance neckAppearance = createTextureAppearance(neckTexture);
-        Cylinder lampNeck = new Cylinder(0.05f, 0.6f, Primitive.GENERATE_TEXTURE_COORDS, neckAppearance);
-
-     // Create the lamp shade (cone) with 50% transparency in texture
-        Appearance shadeAppearance = createTextureAppearance(shadeTexture);
-
-        // Set transparency attributes for the texture
-        TransparencyAttributes transparencyAttributes = new TransparencyAttributes();
-        transparencyAttributes.setTransparencyMode(TransparencyAttributes.BLENDED);
-        transparencyAttributes.setTransparency(0.5f); // 50% transparency
-        shadeAppearance.setTransparencyAttributes(transparencyAttributes);
-
-        // Create the lamp shade (cone)
-        Cone lampShade = new Cone(0.3f, 0.5f, Primitive.GENERATE_TEXTURE_COORDS, shadeAppearance);
+        // Create the lamp shade (cone) with yellow color (no transparency)
+        Appearance shadeAppearance = createMaterialAppearance(new Color3f(1.0f, 1.0f, 0.0f)); // Yellow shade
+        Cone lampShade = new Cone(0.3f, 0.5f, Primitive.GENERATE_NORMALS, shadeAppearance);
 
         // Position the neck above the base
         Transform3D neckTransform = new Transform3D();
@@ -105,12 +96,8 @@ public class Lamp {
         lampTG.addChild(neckTG);
         lampTG.addChild(shadeTG);
 
-        // Create a floor (gray box)
-        Appearance floorAppearance = new Appearance();
-        Color3f floorColor = new Color3f(0.7f, 0.7f, 0.7f);
-        ColoringAttributes floorColoring = new ColoringAttributes(floorColor, ColoringAttributes.SHADE_FLAT);
-        floorAppearance.setColoringAttributes(floorColoring);
-
+        // Create a floor (box) with brown color
+        Appearance floorAppearance = createMaterialAppearance(new Color3f(0.6f, 0.3f, 0.1f)); // Brown floor
         Box floor = new Box(1.5f, 0.02f, 1.5f, Primitive.GENERATE_NORMALS, floorAppearance);
         Transform3D floorTransform = new Transform3D();
         floorTransform.setTranslation(new Vector3f(0.0f, -0.5f, 0.0f));
@@ -124,46 +111,40 @@ public class Lamp {
         // Set up lighting
         BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0);
 
-        // Ambient light
+        // Ambient light (low light for general environment)
         Color3f ambientColor = new Color3f(0.2f, 0.2f, 0.2f);
         AmbientLight ambientLight = new AmbientLight(ambientColor);
         ambientLight.setInfluencingBounds(bounds);
         root.addChild(ambientLight);
 
-        // Point light to simulate the lamp's light
-        Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
-        pointLight = new PointLight(lightColor, new Point3f(0.0f, 0.6f, 0.0f), new Point3f(1.0f, 0.0f, 0.0f));
+        // Point light to simulate lamp light shining through shade
         pointLight.setInfluencingBounds(bounds);
         root.addChild(pointLight);
 
         return root;
     }
 
-    // Helper method to load a texture
-    private static Texture loadTexture(String filename) {
-        TextureLoader loader = new TextureLoader(filename, "RGB", new Container());
-        Texture texture = loader.getTexture();
-        texture.setBoundaryModeS(Texture.WRAP);
-        texture.setBoundaryModeT(Texture.WRAP);
-        texture.setMinFilter(Texture.BASE_LEVEL_LINEAR);
-        texture.setMagFilter(Texture.BASE_LEVEL_LINEAR);
-        return texture;
-    }
-
-    // Helper method to create an appearance with a texture
-    private static Appearance createTextureAppearance(Texture texture) {
+    // Helper method to create a material appearance (for objects like the lamp base and neck)
+    private static Appearance createMaterialAppearance(Color3f color) {
         Appearance appearance = new Appearance();
-        TextureAttributes texAttr = new TextureAttributes();
-        texAttr.setTextureMode(TextureAttributes.MODULATE);
-        appearance.setTexture(texture);
-        appearance.setTextureAttributes(texAttr);
+        Material material = new Material();
+        material.setDiffuseColor(color);
+        material.setSpecularColor(new Color3f(1.0f, 1.0f, 1.0f)); // Specular highlight for reflectivity
+        material.setShininess(64.0f); // High shininess for reflective effect
+        appearance.setMaterial(material);
         return appearance;
     }
 
     // Helper method to toggle the light on and off
     private static void toggleLight() {
-        lightOn = !lightOn;
-        pointLight.setEnable(lightOn);
-        System.out.println("Light is now " + (lightOn ? "ON" : "OFF"));
+        if (pointLight.getEnable()) {
+            pointLight.setEnable(false);
+            System.out.println("Lamp is Off");
+        } else {
+            pointLight.setEnable(true);
+            System.out.println("Lamp is On");
+        }
     }
 }
+
+
