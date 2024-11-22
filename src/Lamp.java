@@ -1,5 +1,6 @@
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.*;
+import org.jogamp.java3d.utils.image.TextureLoader;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
@@ -9,7 +10,8 @@ import java.awt.event.*;
 public class Lamp {
     static Color3f lightColor = new Color3f(1.0f, 1.0f, 1.0f);
     private static PointLight pointLight = new PointLight(lightColor, new Point3f(0.0f, 0.6f, 0.0f), new Point3f(1.0f, 0.0f, 0.0f));
-    
+    private static TransformGroup baseTG = new TransformGroup(); // TransformGroup for the base
+
     static {
         pointLight.setCapability(PointLight.ALLOW_STATE_READ);
         pointLight.setCapability(PointLight.ALLOW_STATE_WRITE);
@@ -33,16 +35,8 @@ public class Lamp {
         // Create the SimpleUniverse using the Canvas3D
         SimpleUniverse universe = new SimpleUniverse(canvas);
 
-        // Add mouse click interaction for turning the light on and off
-        canvas.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                toggleLight();
-            }
-        });
-
         // Create the scene and add it to the universe
-        BranchGroup scene = createSceneGraph();
+        BranchGroup scene = createSceneGraph(canvas);
         universe.getViewingPlatform().setNominalViewingTransform();
         universe.addBranchGraph(scene);
 
@@ -55,46 +49,11 @@ public class Lamp {
         });
     }
 
-    private static BranchGroup createSceneGraph() {
+    private static BranchGroup createSceneGraph(Canvas3D canvas) {
         BranchGroup root = new BranchGroup();
 
         // Create the lamp TransformGroup
-        TransformGroup lampTG = new TransformGroup();
-
-        // Create the lamp base (cylinder) with orange color
-        Appearance baseAppearance = createMaterialAppearance(new Color3f(1.0f, 0.6f, 0.0f)); // Orange base
-        Cylinder lampBase = new Cylinder(0.2f, 0.05f, Primitive.GENERATE_NORMALS, baseAppearance);
-
-        // Create the lamp neck (thin cylinder) with light brown color
-        Appearance neckAppearance = createMaterialAppearance(new Color3f(0.8f, 0.5f, 0.2f)); // Light brown neck
-        Cylinder lampNeck = new Cylinder(0.05f, 0.6f, Primitive.GENERATE_NORMALS, neckAppearance);
-
-        // Create the lamp shade (cone) with yellow color (no transparency)
-        Appearance shadeAppearance = createMaterialAppearance(new Color3f(1.0f, 1.0f, 0.0f)); // Yellow shade
-        Cone lampShade = new Cone(0.3f, 0.5f, Primitive.GENERATE_NORMALS, shadeAppearance);
-
-        // Position the neck above the base
-        Transform3D neckTransform = new Transform3D();
-        neckTransform.setTranslation(new Vector3f(0.0f, 0.3f, 0.0f));
-        TransformGroup neckTG = new TransformGroup(neckTransform);
-        neckTG.addChild(lampNeck);
-
-        // Position the lampshade above the neck
-        Transform3D shadeTransform = new Transform3D();
-        shadeTransform.setTranslation(new Vector3f(0.0f, 0.6f, 0.0f));
-        TransformGroup shadeTG = new TransformGroup(shadeTransform);
-        shadeTG.addChild(lampShade);
-
-        // Position the lamp base on the floor (table surface)
-        Transform3D baseTransform = new Transform3D();
-        baseTransform.setTranslation(new Vector3f(0.0f, 0.02f, 0.0f));
-        TransformGroup baseTG = new TransformGroup(baseTransform);
-        baseTG.addChild(lampBase);
-
-        // Add base, neck, and shade to the lamp TransformGroup
-        lampTG.addChild(baseTG);
-        lampTG.addChild(neckTG);
-        lampTG.addChild(shadeTG);
+        TransformGroup lampTG = createLamp(canvas);
 
         // Create a floor (box) with brown color
         Appearance floorAppearance = createMaterialAppearance(new Color3f(0.6f, 0.3f, 0.1f)); // Brown floor
@@ -124,6 +83,57 @@ public class Lamp {
         return root;
     }
 
+    private static TransformGroup createLamp(Canvas3D canvas) {
+        TransformGroup lampTG = new TransformGroup();
+
+        // Create the lamp base (cylinder) with texture
+        Appearance baseAppearance = createTexturedAppearance("img/wood.jpg");
+        Cylinder lampBase = new Cylinder(0.2f, 0.05f, Primitive.GENERATE_NORMALS | Primitive.GENERATE_TEXTURE_COORDS, baseAppearance);
+
+        // Create the lamp neck (thin cylinder) with texture
+        Appearance neckAppearance = createTexturedAppearance("img/gold.jpg");
+        Cylinder lampNeck = new Cylinder(0.05f, 0.6f, Primitive.GENERATE_NORMALS | Primitive.GENERATE_TEXTURE_COORDS, neckAppearance);
+
+        // Create the lamp shade (cone) with yellow color (no transparency)
+        Appearance shadeAppearance = createMaterialAppearance(new Color3f(1.0f, 1.0f, 0.0f)); // Yellow shade
+        Cone lampShade = new Cone(0.3f, 0.5f, Primitive.GENERATE_NORMALS, shadeAppearance);
+
+        // Position the base
+        Transform3D baseTransform = new Transform3D();
+        baseTransform.setTranslation(new Vector3f(0.0f, 0.02f, 0.0f));
+        baseTG.setTransform(baseTransform);
+        baseTG.addChild(lampBase);
+
+        // Add a MouseListener to the base TransformGroup
+        baseTG.setCapability(TransformGroup.ENABLE_PICK_REPORTING);
+        canvas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Check if the click occurred within the bounds of the base
+                toggleLight();
+            }
+        });
+
+        // Position the neck
+        Transform3D neckTransform = new Transform3D();
+        neckTransform.setTranslation(new Vector3f(0.0f, 0.3f, 0.0f));
+        TransformGroup neckTG = new TransformGroup(neckTransform);
+        neckTG.addChild(lampNeck);
+
+        // Position the lampshade
+        Transform3D shadeTransform = new Transform3D();
+        shadeTransform.setTranslation(new Vector3f(0.0f, 0.6f, 0.0f));
+        TransformGroup shadeTG = new TransformGroup(shadeTransform);
+        shadeTG.addChild(lampShade);
+
+        // Add all components directly to the lamp TransformGroup
+        lampTG.addChild(baseTG);
+        lampTG.addChild(neckTG);
+        lampTG.addChild(shadeTG);
+
+        return lampTG;
+    }
+
     // Helper method to create a material appearance (for objects like the lamp base and neck)
     private static Appearance createMaterialAppearance(Color3f color) {
         Appearance appearance = new Appearance();
@@ -132,6 +142,15 @@ public class Lamp {
         material.setSpecularColor(new Color3f(1.0f, 1.0f, 1.0f)); // Specular highlight for reflectivity
         material.setShininess(64.0f); // High shininess for reflective effect
         appearance.setMaterial(material);
+        return appearance;
+    }
+
+    // Helper method to create a textured appearance
+    private static Appearance createTexturedAppearance(String texturePath) {
+        Appearance appearance = new Appearance();
+        TextureLoader loader = new TextureLoader(texturePath, null);
+        Texture texture = loader.getTexture();
+        appearance.setTexture(texture);
         return appearance;
     }
 
@@ -146,5 +165,3 @@ public class Lamp {
         }
     }
 }
-
-
