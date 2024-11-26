@@ -1,0 +1,159 @@
+package GroupProject;
+
+
+import org.jogamp.java3d.*;
+import org.jogamp.vecmath.*;
+
+import java.awt.AWTEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
+public class Navigation extends Behavior implements KeyListener {
+    private TransformGroup targetTG;  // The object to be navigated
+    private Transform3D transform = new Transform3D();
+    private WakeupCondition wakeupCondition;
+
+    // Movement increments
+    private static final float MOVE_STEP = 0.1f;
+
+    public Navigation(TransformGroup targetTG) {
+        this.targetTG = targetTG;
+        this.setSchedulingBounds(new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0));
+        this.wakeupCondition = new WakeupOnAWTEvent(KeyEvent.KEY_PRESSED);
+    }
+
+    @Override
+    public void initialize() {
+        wakeupOn(wakeupCondition);
+    }
+
+    @Override
+    public void processStimulus(java.util.Iterator<WakeupCriterion> criteria) {
+        // Process key events
+        while (criteria.hasNext()) {
+            WakeupCriterion wakeup = (WakeupCriterion) criteria.next();
+            if (wakeup instanceof WakeupOnAWTEvent) {
+                AWTEvent[] events = ((WakeupOnAWTEvent) wakeup).getAWTEvent();
+                for (AWTEvent event : events) {
+                    if (event instanceof KeyEvent) {
+                        handleKeyEvent((KeyEvent) event);
+                    }
+                }
+            }
+        }
+        wakeupOn(wakeupCondition);
+    }
+
+    private void handleKeyEvent(KeyEvent keyEvent) {
+        int keyCode = keyEvent.getKeyCode();
+
+        // Retrieve the current transformation
+        targetTG.getTransform(transform);
+
+        // Create a translation vector
+        Vector3f translation = new Vector3f();
+        Vector3f forward = getForwardVector(transform);
+        Vector3f right = getRightVector(transform);
+        Vector3f up = getUpVector(transform);
+        transform.get(translation);
+
+        // Adjust the translation based on the key pressed
+        switch (keyCode) {
+            case KeyEvent.VK_UP:
+            	translation.x += MOVE_STEP*forward.x;
+            	translation.z += MOVE_STEP*forward.z;            	
+            	break;
+            case KeyEvent.VK_DOWN:
+            	translation.x -= MOVE_STEP*forward.x;
+            	translation.z -= MOVE_STEP*forward.z;
+                break;
+            case KeyEvent.VK_LEFT:
+            	translation.x -= MOVE_STEP*right.x;
+            	translation.z -= MOVE_STEP*right.z;
+                break;
+            case KeyEvent.VK_RIGHT:
+            	translation.x += MOVE_STEP*right.x;
+            	translation.z += MOVE_STEP*right.z;
+                break;
+            case KeyEvent.VK_W:
+            	translation.x += MOVE_STEP*forward.x;
+            	translation.z += MOVE_STEP*forward.z;            	
+            	break;
+            case KeyEvent.VK_S:
+            	translation.x -= MOVE_STEP*forward.x;
+            	translation.z -= MOVE_STEP*forward.z;
+                break;
+            case KeyEvent.VK_A:
+            	translation.x -= MOVE_STEP*right.x;
+            	translation.z -= MOVE_STEP*right.z;
+                break;
+            case KeyEvent.VK_D:
+            	translation.x += MOVE_STEP*right.x;
+            	translation.z += MOVE_STEP*right.z;
+                break;
+        }
+        getForwardVector(transform);
+        // Set the new translation back to the transform
+        transform.setTranslation(translation);
+        targetTG.setTransform(transform);
+    }
+    
+    public static Vector3f getForwardVector(Transform3D transform) {
+        // Extract the rotation matrix from the Transform3D
+        Matrix3f rotationMatrix = new Matrix3f();
+        transform.get(rotationMatrix);
+
+        // The forward vector corresponds to the negative Z-axis in the rotation matrix
+        Vector3f forward = new Vector3f(0.0f, 0.0f, -1.0f);  // Initial forward vector (negative Z)
+        
+        // Apply the rotation matrix to the forward vector
+        rotationMatrix.transform(forward);
+        System.out.println(forward);
+        return forward;
+    }
+
+    public static Vector3f getRightVector(Transform3D transform) {
+        // Extract the rotation matrix from the Transform3D
+        Matrix3f rotationMatrix = new Matrix3f();
+        transform.get(rotationMatrix);
+
+        // The forward vector corresponds to the positive x-axis in the rotation matrix
+        Vector3f right = new Vector3f(1.0f, 0.0f, 0.0f);  // Initial right vector (positive x)
+        
+        // Apply the rotation matrix to the forward vector
+        rotationMatrix.transform(right);
+        System.out.println(right);
+        return right;
+    }
+
+    public static Vector3f getUpVector(Transform3D transform) {
+        // Extract the rotation matrix from the Transform3D
+        Matrix3f rotationMatrix = new Matrix3f();
+        transform.get(rotationMatrix);
+
+        // The forward vector corresponds to the positive y-axis in the rotation matrix
+        Vector3f up = new Vector3f(0.0f, 1.0f, 0.0f);  // Initial forward vector (positive y)
+        
+        // Apply the rotation matrix to the forward vector
+        rotationMatrix.transform(up);
+        System.out.println(up);
+        return up;
+    }
+
+    
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        // No-op, handled by processStimulus
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // No-op
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // No-op
+    }
+}
