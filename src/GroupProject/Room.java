@@ -213,7 +213,7 @@ public class Room {
         texture.setBoundaryModeT(Texture.WRAP);
         texture.setMagFilter(Texture.BASE_LEVEL_LINEAR);
         TextureAttributes texAttr = new TextureAttributes();
-        texAttr.setTextureMode(TextureAttributes.MODULATE);
+        texAttr.setTextureMode(TextureAttributes.REPLACE);
         Appearance appearance = new Appearance();
         appearance.setTexture(texture);
         appearance.setTextureAttributes(texAttr);

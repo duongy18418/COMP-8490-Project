@@ -11,9 +11,12 @@ import javax.swing.*;
 
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.Box;
+import org.jogamp.java3d.utils.picking.PickCanvas;
+import org.jogamp.java3d.utils.picking.PickResult;
 import org.jogamp.java3d.utils.universe.*;
 import org.jogamp.vecmath.*;
 
+import CodesST8490.Tab;
 import GroupProject.Book.BookCover;
 
 import java.util.Map.Entry;
@@ -31,6 +34,7 @@ public class MainScene extends JPanel implements ActionListener {
 	private static TransformGroup cam;
 	private static Map<String, Bounds> bounds = new HashMap<String, Bounds>();
 	private static Canvas3D canvas3D;
+	private static PickCanvas pickCanvas;
 	
 	private static void adjustFieldOfView(SimpleUniverse universe) {
         View view = universe.getViewer().getView();
@@ -45,40 +49,30 @@ public class MainScene extends JPanel implements ActionListener {
 		
 		
 		
-		roomTG.addChild(BookCover.getBookCover());
+//		roomTG.addChild(BookCover.getBookCover());
 		
 		Transform3D translateObject = new Transform3D(); // Translate used to shift the whole object
 	    translateObject.setTranslation(new Vector3d(0, -1.63f, 0)); // Shift the object by -0.63f on y axis.
 		TransformGroup sceneTG = new TransformGroup();
 		roomTG.setTransform(translateObject);
 		
-		roomTG.addChild(room);
-//		RectangularBox3D.setup();
-//		roomTG.addChild(RectangularBox3D.createSceneGraph());
+		pickCanvas = new PickCanvas(canvas3D, sceneBG);
+        pickCanvas.setMode(PickCanvas.BOUNDS);
+        
+        Transform3D translateRadio = new Transform3D(); // Translate used to shift the whole object
+        translateRadio.setTranslation(new Vector3d(0, 1.63f, 0)); // Shift the object by -0.63f on y axis.
+        TransformGroup radioTG = new TransformGroup();
 		
-		// Create appearance for the red box
-		Appearance appearance = new Appearance();
-		Material material = new Material();
-		material.setDiffuseColor(1.0f, 0.0f, 0.0f); // Red color (RGB)
-		appearance.setMaterial(material);
+		
+		
+		BranchGroup radio = Tab.createSceneGraph();
+		radioTG.addChild(radio);
+		radioTG.setTransform(translateRadio);
+		
+		roomTG.addChild(radioTG);
 
-		// Add RenderingAttributes to prevent the overlay
-		RenderingAttributes ra = new RenderingAttributes();
-		ra.setIgnoreVertexColors(true);
-		ra.setVisible(true);
-		ra.setDepthBufferEnable(true);
-		ra.setDepthBufferWriteEnable(true);
-		appearance.setRenderingAttributes(ra);
 
-		// Add PolygonAttributes to handle face culling
-		PolygonAttributes pa = new PolygonAttributes();
-		pa.setCullFace(PolygonAttributes.CULL_BACK);
-		pa.setBackFaceNormalFlip(true);
-		appearance.setPolygonAttributes(pa);
-		// Create a box with dimensions 0.4 x 0.4 x 0.4
-		Box box = new Box(0.4f, 0.4f, 0.4f, Box.GENERATE_NORMALS, appearance);
-
-		roomTG.addChild(box);
+		roomTG.addChild(room);
 		
 		sceneTG.addChild(roomTG);
 		sceneBG.addChild(sceneTG);                         // show object with/without rotation
@@ -96,6 +90,19 @@ public class MainScene extends JPanel implements ActionListener {
 		SimpleUniverse su = new SimpleUniverse(canvas3D);  // create a SimpleUniverse
 		                                                   // set the viewer's location
 		CommonsNP.define_Viewer(su, new Point3d(-1, 0, 0)); 
+		
+		Tab.setup();
+		
+		canvas3D.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                pickCanvas.setShapeLocation(e);
+                PickResult result = pickCanvas.pickClosest();
+                if (result != null) {
+                    Tab.processPickResult(result);
+                }
+            }
+        });
 		
 		// Add keyboard listeners to the Canvas3D
         canvas3D.addKeyListener(new KeyAdapter() {
