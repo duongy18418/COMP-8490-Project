@@ -213,7 +213,6 @@ public class Room {
         texture.setBoundaryModeT(Texture.WRAP);
         texture.setMagFilter(Texture.BASE_LEVEL_LINEAR);
         TextureAttributes texAttr = new TextureAttributes();
-        texAttr.setTextureMode(TextureAttributes.REPLACE);
         Appearance appearance = new Appearance();
         appearance.setTexture(texture);
         appearance.setTextureAttributes(texAttr);
@@ -228,11 +227,11 @@ public class Room {
     }
 
     private static void addLighting(BranchGroup root) {
-        AmbientLight ambientLight = new AmbientLight(new Color3f(0.5f, 0.5f, 0.5f));
+        AmbientLight ambientLight = new AmbientLight(new Color3f(0.1f, 0.1f, 0.1f));
         ambientLight.setInfluencingBounds(new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0));
         root.addChild(ambientLight);
         DirectionalLight directionalLight = new DirectionalLight(
-                new Color3f(1.0f, 1.0f, 1.0f),
+                new Color3f(0.1f, 0.1f, 0.1f),
                 new Vector3f(-1.0f, -1.0f, -1.0f)
         );
         directionalLight.setInfluencingBounds(new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 100.0));

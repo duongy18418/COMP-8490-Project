@@ -1,88 +1,128 @@
 package GroupProject.Book;
 
-import org.jogamp.java3d.Appearance;
-import org.jogamp.java3d.ColoringAttributes;
-import org.jogamp.java3d.Material;
-import org.jogamp.java3d.PolygonAttributes;
-import org.jogamp.java3d.Shape3D;
-import org.jogamp.java3d.TriangleStripArray;
-import org.jogamp.vecmath.Color3f;
-import org.jogamp.vecmath.Point3f;
-
-import GroupProject.CommonsNP;
+import org.jogamp.java3d.*;
+import org.jogamp.vecmath.*;
 
 public class Page {
-	
-	// Define the dimensions of the paper
-    private float width = 1.5f;  // Width of the paper (along the x-axis)
-    private float height = 2f; // Height of the paper (along the y-axis)
+    private float width = 1.5f;
+    private float height = 2f;
     private float thickness = 0f;
-    public float ScaleX = 0.2f, ScaleY = 0.2f, ScaleZ = 0.2f;
-    
+    private float turnAngle = 0.0f;
+    private TransformGroup pageTG;
+    private TriangleStripArray triangleStrip;
+    private float scaleX = 0.2f;
+    private float scaleY = 0.2f;
+    private float scaleZ = 0.2f;
+    private int strips = 10;
+    private int verticesPerStrip = 4;
     
     public Shape3D createPaper() {
-        // Define the grid size
-        int strips = 10; // Number of strips (height divisions)
-        int verticesPerStrip = 4; // Number of vertices per strip
+        pageTG = new TransformGroup();
+        pageTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+        pageTG.setCapability(TransformGroup.ALLOW_TRANSFORM_READ);
+        
         int totalVertices = strips * verticesPerStrip;
-
-        // Create a TriangleStripArray
-        TriangleStripArray triangleStrip = new TriangleStripArray(
-                totalVertices*2,
-                TriangleStripArray.COORDINATES,
-                new int[] {totalVertices*2}
-        );    
-
-        // Generate points along the breadths
-        int index = 0;
-        for (int strip = 0; strip < strips; strip++) {
-            float yStart = -height / 2 + (height / (strips - 1)) * strip;
-            float yEnd = -height / 2 + (height / (strips - 1)) * (strip + 1);
-            // Points for one strip
-            triangleStrip.setCoordinate(index++, new Point3f(-width / 2*ScaleX, yStart*ScaleY, 0)); // Left of start
-            triangleStrip.setCoordinate(index++, new Point3f(width / 2*ScaleX, yStart*ScaleY, 0.0f));  // Right of start
-            triangleStrip.setCoordinate(index++, new Point3f(-width / 2*ScaleX, yEnd*ScaleY, 0.0f));   // Left of end
-            triangleStrip.setCoordinate(index++, new Point3f(width / 2*ScaleX, yEnd*ScaleY, 0.0f));    // Right of end
+        int subStrips = 3; // Number of subdivisions per strip
+        int totalSubStrips = strips * subStrips;
+        
+        // Create array of strip counts for subdivided strips
+        int[] stripCounts = new int[totalSubStrips * 2];
+        for (int i = 0; i < totalSubStrips * 2; i++) {
+            stripCounts[i] = verticesPerStrip;
         }
         
-        for (int strip = 0; strip < strips; strip++) {
-            float yStart = -height / 2 + (height / (strips - 1)) * strip;
-            float yEnd = -height / 2 + (height / (strips - 1)) * (strip + 1);
-            // Points for one strip
-            triangleStrip.setCoordinate(index++, new Point3f(width / 2*ScaleX, yStart*ScaleY, 0.0f));  // Right of start
-            triangleStrip.setCoordinate(index++, new Point3f(-width / 2*ScaleX, yStart*ScaleY, 0)); // Left of start
-            triangleStrip.setCoordinate(index++, new Point3f(width / 2*ScaleX, yEnd*ScaleY, 0.0f));    // Right of end
-            triangleStrip.setCoordinate(index++, new Point3f(-width / 2*ScaleX, yEnd*ScaleY, 0.0f));   // Left of end
-        }
-
-        // Create an appearance for the paper
+        triangleStrip = new TriangleStripArray(
+            totalSubStrips * verticesPerStrip * 2,
+            TriangleStripArray.COORDINATES | TriangleStripArray.NORMALS,
+            stripCounts
+        );
+        
+        triangleStrip.setCapability(TriangleStripArray.ALLOW_COORDINATE_WRITE);
+        triangleStrip.setCapability(TriangleStripArray.ALLOW_COORDINATE_READ);
+        
+        updatePageGeometry(triangleStrip, totalSubStrips, 0.0f);
+        
         Appearance paperAppearance = new Appearance();
-
-        // Define a material for the paper
         Material paperMaterial = new Material();
-        paperMaterial.setDiffuseColor(new Color3f(0.9f, 0.9f, 0.9f)); // Light gray color
-        paperMaterial.setAmbientColor(new Color3f(0.8f, 0.8f, 0.8f)); // Slightly darker gray
-        paperMaterial.setSpecularColor(new Color3f(0.5f, 0.5f, 0.5f)); // Subtle shine
-        paperMaterial.setShininess(5.0f); // Low shininess for matte effect
+        paperMaterial.setDiffuseColor(new Color3f(1.0f, 1.0f, 1.0f));
+        paperMaterial.setAmbientColor(new Color3f(1.0f, 1.0f, 1.0f));
+        paperMaterial.setSpecularColor(new Color3f(1.0f, 1.0f, 1.0f));
+        paperMaterial.setShininess(5.0f);
         paperAppearance.setMaterial(paperMaterial);
-
-        // Create the Shape3D object
+        
+        PolygonAttributes pa = new PolygonAttributes();
+        pa.setCullFace(PolygonAttributes.CULL_NONE);
+        paperAppearance.setPolygonAttributes(pa);
+        
         Shape3D paperShape = new Shape3D(triangleStrip, paperAppearance);
-
+        paperShape.setCapability(Shape3D.ALLOW_GEOMETRY_WRITE);
+        paperShape.setCapability(Shape3D.ALLOW_GEOMETRY_READ);
+        
         return paperShape;
     }
     
-    protected static Appearance polygon_Appearance(Color3f clr, boolean t) {
-		Appearance app = new Appearance();
-		PolygonAttributes pa = new PolygonAttributes();
-		if (t == true)
-			pa.setPolygonMode(PolygonAttributes.POLYGON_LINE);  // show only polylines
-		pa.setCullFace(PolygonAttributes.CULL_NONE);       // show both sides
-		app.setPolygonAttributes(pa);
-		ColoringAttributes ca = new ColoringAttributes(clr,
-				ColoringAttributes.FASTEST);
-		app.setColoringAttributes(ca);
-
-		return app;
-	}
+    private void updatePageGeometry(TriangleStripArray geometry, int totalStrips, float angle) {
+        int index = 0;
+        float curveFactor = (float)Math.sin(angle * Math.PI / 180.0);
+        Point3f lastEndLeft = null;
+        Point3f lastEndRight = null;
+        
+        // Front face strips
+        for (int strip = 0; strip < totalStrips; strip++) {
+            float t = strip / (float)(totalStrips - 1);
+            float yStart = -height/2 + height * t;
+            float yEnd = -height/2 + height * (t + 1.0f/totalStrips);
+            
+            // Calculate height-dependent curve
+            float heightScale = (float)Math.cos(angle * Math.PI / 180.0 * t);
+            float zCurveStart = (float)(Math.sin(angle * Math.PI / 180.0) * height * t * t);
+            float zCurveEnd = (float)(Math.sin(angle * Math.PI / 180.0) * height * ((t + 1.0f/totalStrips) * (t + 1.0f/totalStrips)));
+            
+            if (lastEndLeft != null && lastEndRight != null) {
+                geometry.setCoordinate(index++, lastEndLeft);
+                geometry.setCoordinate(index++, lastEndRight);
+            } else {
+                geometry.setCoordinate(index++, new Point3f(-width/2 * scaleX, yStart * scaleY * heightScale, zCurveStart * scaleZ));
+                geometry.setCoordinate(index++, new Point3f(width/2 * scaleX, yStart * scaleY * heightScale, zCurveStart * scaleZ));
+            }
+            
+            lastEndLeft = new Point3f(-width/2 * scaleX, yEnd * scaleY * heightScale, zCurveEnd * scaleZ);
+            lastEndRight = new Point3f(width/2 * scaleX, yEnd * scaleY * heightScale, zCurveEnd * scaleZ);
+            geometry.setCoordinate(index++, lastEndLeft);
+            geometry.setCoordinate(index++, lastEndRight);
+        }
+        
+        // Reset for back face
+        lastEndLeft = null;
+        lastEndRight = null;
+        
+        // Back face strips
+        for (int strip = 0; strip < totalStrips; strip++) {
+            float t = strip / (float)(totalStrips - 1);
+            float yStart = -height/2 + height * t;
+            float yEnd = -height/2 + height * (t + 1.0f/totalStrips);
+            
+            float heightScale = (float)Math.cos(angle * Math.PI / 180.0 * t);
+            float zCurveStart = (float)(Math.sin(angle * Math.PI / 180.0) * height * t * t);
+            float zCurveEnd = (float)(Math.sin(angle * Math.PI / 180.0) * height * ((t + 1.0f/totalStrips) * (t + 1.0f/totalStrips)));
+            
+            if (lastEndLeft != null && lastEndRight != null) {
+                geometry.setCoordinate(index++, lastEndRight);
+                geometry.setCoordinate(index++, lastEndLeft);
+            } else {
+                geometry.setCoordinate(index++, new Point3f(width/2 * scaleX, yStart * scaleY * heightScale, zCurveStart * scaleZ));
+                geometry.setCoordinate(index++, new Point3f(-width/2 * scaleX, yStart * scaleY * heightScale, zCurveStart * scaleZ));
+            }
+            
+            lastEndLeft = new Point3f(-width/2 * scaleX, yEnd * scaleY * heightScale, zCurveEnd * scaleZ);
+            lastEndRight = new Point3f(width/2 * scaleX, yEnd * scaleY * heightScale, zCurveEnd * scaleZ);
+            geometry.setCoordinate(index++, lastEndRight);
+            geometry.setCoordinate(index++, lastEndLeft);
+        }
+    }
+    
+    public void turnPage(float angle) {
+        turnAngle = angle;
+        updatePageGeometry(triangleStrip, strips * 3, turnAngle);
+    }
 }

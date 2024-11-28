@@ -11,13 +11,14 @@ import javax.swing.*;
 
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.Box;
+import org.jogamp.java3d.utils.geometry.Cylinder;
+import org.jogamp.java3d.utils.geometry.Sphere;
 import org.jogamp.java3d.utils.picking.PickCanvas;
 import org.jogamp.java3d.utils.picking.PickResult;
 import org.jogamp.java3d.utils.universe.*;
 import org.jogamp.vecmath.*;
 
-import CodesST8490.Tab;
-import GroupProject.Book.BookCover;
+import GroupProject.Book.Book;
 
 import java.util.Map.Entry;
 
@@ -35,6 +36,10 @@ public class MainScene extends JPanel implements ActionListener {
 	private static Map<String, Bounds> bounds = new HashMap<String, Bounds>();
 	private static Canvas3D canvas3D;
 	private static PickCanvas pickCanvas;
+	private static Book book;
+	private static float angle = 0;
+	private static boolean direction = false, open = false;
+	private static int pageCount = 30;
 	
 	private static void adjustFieldOfView(SimpleUniverse universe) {
         View view = universe.getViewer().getView();
@@ -42,14 +47,32 @@ public class MainScene extends JPanel implements ActionListener {
     }
 
 	/* a function to build and return the content branch */
-	private static BranchGroup create_Scene() {
+	private static BranchGroup create_Scene(Canvas3D canvas) {
 		BranchGroup sceneBG = new BranchGroup();	
 		BranchGroup room = Room.CreateRoom(bounds);
 		TransformGroup roomTG = new TransformGroup();
+		roomTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		Tab.initial_Sound();
+		book = new Book(pageCount);
+		Transform3D tableTransform = new Transform3D();
+		tableTransform.setTranslation(new Vector3d(1f, 0, 0)); // Shift the object by -0.63f on y axis.
+		
+		TransformGroup tableTG = new TransformGroup(tableTransform);
+		
+		Transform3D pageTransform = new Transform3D();
+		pageTransform.rotY(Math.PI/2);
+		
+		TransformGroup pageTG = new TransformGroup(pageTransform);
+//		tableTG.addChild(pageTG);
+		
+		pageTG.addChild(book.getBookGroup());
+		
+		roomTG.addChild(Table.createSceneGraph());
+		
+		roomTG.addChild(tableTG);
 		
 		
-		
-//		roomTG.addChild(BookCover.getBookCover());
+//		
 		
 		Transform3D translateObject = new Transform3D(); // Translate used to shift the whole object
 	    translateObject.setTranslation(new Vector3d(0, -1.63f, 0)); // Shift the object by -0.63f on y axis.
@@ -57,21 +80,62 @@ public class MainScene extends JPanel implements ActionListener {
 		roomTG.setTransform(translateObject);
 		
 		pickCanvas = new PickCanvas(canvas3D, sceneBG);
-        pickCanvas.setMode(PickCanvas.BOUNDS);
+        pickCanvas.setMode(PickCanvas.GEOMETRY);
         
         Transform3D translateRadio = new Transform3D(); // Translate used to shift the whole object
-        translateRadio.setTranslation(new Vector3d(0, 1.63f, 0)); // Shift the object by -0.63f on y axis.
+        translateRadio.setTranslation(new Vector3d(-1, 1.4, 0)); // Shift the object by -0.63f on y axis.
         TransformGroup radioTG = new TransformGroup();
-		
 		
 		
 		BranchGroup radio = Tab.createSceneGraph();
 		radioTG.addChild(radio);
 		radioTG.setTransform(translateRadio);
 		
-		roomTG.addChild(radioTG);
+		tableTG.addChild(radioTG);
+		
+		Transform3D translateLamp = new Transform3D(); // Translate used to shift the whole object
+        translateLamp.setTranslation(new Vector3d(-2, 1.6, 0)); // Shift the object by -0.63f on y axis.
+		
+        TransformGroup lampTG = new TransformGroup();
+		
+		BranchGroup lamp = Lamp.createSceneGraph(canvas);
+		lampTG.setTransform(translateLamp);
+		lampTG.addChild(lamp);
+		tableTG.addChild(lampTG);
 
-
+		
+		Transform3D translateCoin = new Transform3D(); // Translate used to shift the whole object
+        translateCoin.setTranslation(new Vector3d(-2, 1.1, 0.7)); // Shift the object by -0.63f on y axis.
+		
+        TransformGroup coinTG = new TransformGroup();
+		
+		BranchGroup coin = coinSpin.createSceneGraph();
+		Transform3D scaleTransform = new Transform3D();
+        float scaleFactor = 0.05f; // Scale down by 50%
+        scaleTransform.setScale(scaleFactor);
+        
+        TransformGroup scaleDown = new TransformGroup(scaleTransform);
+        
+        coinTG.setTransform(translateCoin);
+        scaleDown.addChild(coin);
+        coinTG.addChild(scaleDown);
+		tableTG.addChild(coinTG);
+		
+		
+		Transform3D translateTest = new Transform3D(); // Translate used to shift the whole object
+        translateTest.setTranslation(new Vector3d(-3, 1.6, 0)); // Shift the object by -0.63f on y axis.
+		
+        TransformGroup TestTG = new TransformGroup();
+		
+		BranchGroup Test = createSceneGraph(pageTG);
+		Transform3D lodsTransform = new Transform3D();
+		lodsTransform.setTranslation(new Vector3d(0, 1.3f, 0));
+		
+		TestTG.setTransform(lodsTransform);
+		
+		TestTG.addChild(Test);
+		tableTG.addChild(TestTG);
+		
 		roomTG.addChild(room);
 		
 		sceneTG.addChild(roomTG);
@@ -81,6 +145,43 @@ public class MainScene extends JPanel implements ActionListener {
 		
 		return sceneBG;
 	}
+	
+	
+	
+	private static BranchGroup createSceneGraph(TransformGroup testTG) {
+		BranchGroup baseBG = new BranchGroup();
+
+		Appearance tableAppearance = new Appearance();
+        ColoringAttributes tableColorAttr = new ColoringAttributes(new Color3f(1f, 0.4f, 0.2f), ColoringAttributes.NICEST);
+        tableAppearance.setColoringAttributes(tableColorAttr);
+
+		TransformGroup low = new TransformGroup();
+		low.addChild(new Box(0.01f,0.2f,0.2f,Box.GENERATE_NORMALS, tableAppearance));
+		
+		
+		TransformGroup translateTG = new TransformGroup();
+		translateTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		
+		
+		
+
+		float[] distances = { 2.0f };
+		Switch SwitchTarget = new Switch();                // create DistanceLOD target object
+		SwitchTarget.setCapability(Switch.ALLOW_SWITCH_WRITE);
+		SwitchTarget.addChild(testTG);
+		SwitchTarget.addChild(low);
+		DistanceLOD distanceLOD = new DistanceLOD(distances, new Point3f());
+		distanceLOD.addSwitch(SwitchTarget);
+		distanceLOD.setSchedulingBounds(CommonsNP.twentyBS);
+		if ((SwitchTarget.numChildren() - 1) != distanceLOD.numDistances()) {
+			System.out.println("Error in creating LOD ");
+		}
+
+		baseBG.addChild(translateTG);
+		translateTG.addChild(distanceLOD); translateTG.addChild(SwitchTarget);
+		
+		return baseBG;
+    }
 
 	/* a constructor to set up for the application */
 	public MainScene() {
@@ -92,6 +193,8 @@ public class MainScene extends JPanel implements ActionListener {
 		CommonsNP.define_Viewer(su, new Point3d(-1, 0, 0)); 
 		
 		Tab.setup();
+		
+		
 		
 		canvas3D.addMouseListener(new MouseAdapter() {
             @Override
@@ -109,6 +212,15 @@ public class MainScene extends JPanel implements ActionListener {
             @Override
             public void keyPressed(KeyEvent e) {
                 keysPressed.add(e.getKeyCode());
+                if(e.getKeyCode() == KeyEvent.VK_O) {
+                	open = true;
+                	direction = true;
+                }
+                if(e.getKeyCode() == KeyEvent.VK_P) {
+                	open = false;
+                	direction = true;
+                }
+                
             }
 
             @Override
@@ -162,7 +274,7 @@ public class MainScene extends JPanel implements ActionListener {
 		cam = viewTG;
 		CollisionDetection collision = new CollisionDetection(viewTG);
 		
-		BranchGroup scene = create_Scene();
+		BranchGroup scene = create_Scene(canvas3D);
 		
 		scene.addChild(collision);
 		
@@ -172,7 +284,7 @@ public class MainScene extends JPanel implements ActionListener {
 		scene.addChild(mouse);
 		
 		
-		scene.addChild(CommonsNP.add_Lights(CommonsNP.White, 1));
+//		scene.addChild(CommonsNP.add_Lights(CommonsNP.White, 1));
 		
 		scene.compile();		                           // optimize the BranchGroup
 		su.addBranchGraph(scene);                          // attach 'scene' to 'su'
@@ -236,6 +348,32 @@ public class MainScene extends JPanel implements ActionListener {
 		}else {
 			deltaTime = System.currentTimeMillis()-previousTime;
 			previousTime = System.currentTimeMillis();
+			
+			if(direction && !open) {
+				angle -= 0.1*deltaTime;
+				if(angle < 0) {
+					angle = 0;
+					direction = false;
+				}
+			}
+			if(direction && open) {
+				angle += 0.1*deltaTime;
+				if(angle > 90) {
+					angle = 90;
+					direction = true;
+				}
+			}
+			book.openFrontCover(-angle);
+			book.openBackCover(angle);
+			
+			for(int i = 0;i<pageCount/2;i++) {
+				book.turnPage(i, -angle+angle/(i*pageCount/10));
+			}
+			
+			for(int i = pageCount/2;i<pageCount;i++) {
+				book.turnPage(i, angle-angle/((pageCount-i)*pageCount/10));
+			}
+			
 			boolean canMove = true;
 			for(Entry<String, Bounds> bound: bounds.entrySet()) {
 				if(CollisionDetection.checkCollision(cam, bound)) {

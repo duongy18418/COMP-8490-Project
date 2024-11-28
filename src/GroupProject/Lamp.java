@@ -50,19 +50,16 @@ public class Lamp {
         });
     }
 
-    private static BranchGroup createSceneGraph(Canvas3D canvas) {
+    public static BranchGroup createSceneGraph(Canvas3D canvas) {
         BranchGroup root = new BranchGroup();
 
         // Create the lamp TransformGroup
         TransformGroup lampTG = createLamp(canvas);
 
         // Create a floor (box) with brown color
-        Appearance floorAppearance = createMaterialAppearance(new Color3f(0.6f, 0.3f, 0.1f)); // Brown floor
-        Box floor = new Box(1.5f, 0.02f, 1.5f, Primitive.GENERATE_NORMALS, floorAppearance);
         Transform3D floorTransform = new Transform3D();
         floorTransform.setTranslation(new Vector3f(0.0f, -0.5f, 0.0f));
         TransformGroup floorTG = new TransformGroup(floorTransform);
-        floorTG.addChild(floor);
 
         // Add the lamp as a child of the floor TransformGroup, so it sits on the floor
         floorTG.addChild(lampTG);
@@ -107,13 +104,28 @@ public class Lamp {
 
         // Add a MouseListener to the base TransformGroup
         baseTG.setCapability(TransformGroup.ENABLE_PICK_REPORTING);
-        canvas.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                // Check if the click occurred within the bounds of the base
-                toggleLight();
-            }
-        });
+        canvas.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				// TODO Auto-generated method stub
+				if(e.getKeyCode() == KeyEvent.VK_L) {
+					toggleLight();
+				}
+			}
+		});
 
         // Position the neck
         Transform3D neckTransform = new Transform3D();

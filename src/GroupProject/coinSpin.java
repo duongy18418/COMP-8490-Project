@@ -50,7 +50,7 @@ public class coinSpin {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_T && !isAnimating) {
                     isAnimating = true;
-                    playAudio("src/assets/coinSpinng.wav");
+                    playAudio("src\\assets\\coinSpinng.wav");
                     startCoinSpin();
                 }
             }
@@ -74,12 +74,10 @@ public class coinSpin {
         viewTransform.setTransform(cameraTransform);
     }
 
-    private static BranchGroup createSceneGraph() {
+    public static BranchGroup createSceneGraph() {
         BranchGroup root = new BranchGroup();
 
-        // Add a combined stage
-        TransformGroup stageTG = createCombinedStage();
-        root.addChild(stageTG);
+       
 
         // Load and add the coin OBJ file
         coinTG = loadCoinObj();
@@ -136,8 +134,8 @@ public class coinSpin {
 
         try {
             ObjectFile loader = new ObjectFile(ObjectFile.RESIZE | ObjectFile.TRIANGULATE | ObjectFile.STRIPIFY);
-            
-            Scene coinScene = loader.load("src/assets/Coin.obj");
+//            loader.setBasePath("src/assets/");
+            Scene coinScene = loader.load("src\\assets\\Coin.obj");
             BranchGroup coinBG = coinScene.getSceneGroup();
 
             Transform3D coinTransform = new Transform3D();
