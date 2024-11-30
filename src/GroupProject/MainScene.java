@@ -72,6 +72,7 @@ public class MainScene extends JPanel implements ActionListener {
 		roomTG.addChild(tableTG);
 		
 		
+		
 //		
 		
 		Transform3D translateObject = new Transform3D(); // Translate used to shift the whole object
@@ -105,7 +106,7 @@ public class MainScene extends JPanel implements ActionListener {
 
 		
 		Transform3D translateCoin = new Transform3D(); // Translate used to shift the whole object
-        translateCoin.setTranslation(new Vector3d(-2, 1.1, 0.7)); // Shift the object by -0.63f on y axis.
+        translateCoin.setTranslation(new Vector3d(-2, 1.2, 0.7)); // Shift the object by -0.63f on y axis.
 		
         TransformGroup coinTG = new TransformGroup();
 		
@@ -121,6 +122,7 @@ public class MainScene extends JPanel implements ActionListener {
         coinTG.addChild(scaleDown);
 		tableTG.addChild(coinTG);
 		
+		coinSpin.startCoinSpin();
 		
 		Transform3D translateTest = new Transform3D(); // Translate used to shift the whole object
         translateTest.setTranslation(new Vector3d(-3, 1.6, 0)); // Shift the object by -0.63f on y axis.
@@ -146,7 +148,17 @@ public class MainScene extends JPanel implements ActionListener {
 		return sceneBG;
 	}
 	
-	
+	/* a function to create a rotation behavior and refer it to 'rot_TG' */
+	public static RotationInterpolator rotate_Behavior(int r_num, TransformGroup rot_TG) {
+
+		rot_TG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		Transform3D yAxis = new Transform3D();
+		Alpha rotationAlpha = new Alpha(-1, r_num);              // rotate at 'r_num'/millisecond
+		RotationInterpolator rot_beh = new RotationInterpolator(
+				rotationAlpha, rot_TG, yAxis, 0.0f, (float) Math.PI * 2.0f);
+		rot_beh.setSchedulingBounds(CommonsNP.hundredBS);            // start rotation at 0- and end at 360-degrees
+		return rot_beh;
+	}
 	
 	private static BranchGroup createSceneGraph(TransformGroup testTG) {
 		BranchGroup baseBG = new BranchGroup();

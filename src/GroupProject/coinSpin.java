@@ -151,11 +151,11 @@ public class coinSpin {
         return coinTG;
     }
 
-    private static void startCoinSpin() {
+    static void startCoinSpin() {
         Transform3D spinAxis = new Transform3D();
         spinAxis.setTranslation(new Vector3f(0.0f, 0.75f, 0.0f)); // Coin stays at 0.75f above the green box
 
-        Alpha spinAlpha = new Alpha(1, 12000); // Spin for 10 seconds
+        Alpha spinAlpha = new Alpha(-1, 12000); // Spin for 10 seconds
         spinAlpha.setIncreasingAlphaDuration(7000);
         spinAlpha.setDecreasingAlphaDuration(5000);
         spinAlpha.setIncreasingAlphaRampDuration(6000);
