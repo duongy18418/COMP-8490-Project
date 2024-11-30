@@ -7,10 +7,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-core.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-examples.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-utils.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/jogamp-fat.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/vecmath.jar"/>
+	<classpathentry kind="lib" path="Jars4Java3D/java3d-core.jar"/>
+	<classpathentry kind="lib" path="Jars4Java3D/java3d-examples.jar"/>
+	<classpathentry kind="lib" path="Jars4Java3D/java3d-utils.jar"/>
+	<classpathentry kind="lib" path="Jars4Java3D/jogamp-fat.jar"/>
+	<classpathentry kind="lib" path="Jars4Java3D/vecmath.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

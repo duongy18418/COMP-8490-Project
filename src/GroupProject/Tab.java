@@ -141,8 +141,6 @@ import org.jogamp.java3d.utils.picking.PickCanvas;
 import org.jogamp.java3d.utils.picking.PickResult;
 import org.jogamp.vecmath.*;
 
-import CodesNP8940.SoundUtilityJOAL;
-
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
